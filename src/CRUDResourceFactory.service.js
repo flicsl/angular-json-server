@@ -6,7 +6,7 @@
  */
 (function() {
 	angular.module("angular-json-server")
-	.factory("CRUDResourceFactory", function($q, lodash) {
+	.factory("CRUDResourceFactory", function($q) {
 		const defaultOptions = {
 			pageSize: 10,
 			resourceName: "resource",
@@ -49,81 +49,41 @@
 				else
 					watcher.loadOne ? this.loadOne(newVal) : this.load(newVal);
 			}, true);
-		}
 
-		/**
-		 * Load more objects of the resource into view model.
-		 * @param {Object} query The query to be sent to service.
-		 * @param {String} query.union Whether the response should be united with the already loaded resources.
-		 * @param {number} page The page to load.
-		 * @param {number} pageSize The page size.
-		 * @return {Promise} The promise to be resolved once the request resolves and the view model is updated.
-		 */
-		CRUDResource.prototype.load = function(query, page = 0, pageSize = this.options.pageSize) {
-			this.vm.loading = true;
-			query = angular.extend({}, this.options.query, query);
-			this.vm.loadedAll = false;
-			return this.crudService.find(query, {page: page, pageSize: pageSize})
-			.then(response => {
-				// Processes union queries
-				if (query.union) {
-					var loadedResources = this.vm[this.options.resourceName];
-					this.vm[this.options.resourceName] = lodash.union(loadedResources, response.data);
-				} else {
-					this.vm[this.options.resourceName] = response.data;
-					this.vm.currentPage = 0;
-				}
-
-				// Updates the vm whenever all elements have loaded
-				var totalCount = response.headers("X-Total-Count");
-				if (totalCount && (page * pageSize + pageSize) >= totalCount) {
-					this.vm.loadedAll = true;
-				}
-
-				// Calls onLoad method, if any
-				this.options.onLoad && this.options.onLoad(response.data);
-				return response.data;
-			},
-			err => {
-				this.vm.loadingError = true;
-				this.options.onLoadError && this.options.onLoadError(err);
-				return err;
-			})
-			.finally(() => {
-				this.vm.loading = false;
-			});
-		};
-
-		/**
-		 * Loads more items of a resource, increasing current page at view-model.
-		 * @param {Object} query The query to be sent to service.
-		 * @param {number} [pageSize] The size of the page to load.
-		 * @return {Promise} The promise to be resolved once the request is resolved and the view-model is updated.
-		 */
-		CRUDResource.prototype.loadMore = function(query, pageSize = this.options.pageSize) {
-			query = angular.extend({}, query, {union: true});
-			this.vm.currentPage = this.vm.currentPage || 0;
-			this.vm.currentPage++;
-			if (this.vm.loadedAll)
-				throw new Error("There are no more resources to load.");
-			return this.load(query, this.vm.currentPage, pageSize);
-		};
-
-		/**
-		 * Loads a single instance of a resource.
-		 * @param {string} id The id of the instance.
-		 * @return {Promise} Promise to be resolved once request is resolved and view-model is updated.
-		 */
-		CRUDResource.prototype.loadOne = function(id) {
-			this.vm.loading = true;
-			return $q((resolve, reject) => {
-				this.crudService.findOne(id)
+			/**
+			 * Load more objects of the resource into view model.
+			 * @param {Object} query The query to be sent to service.
+			 * @param {String} query.union Whether the response should be united with the already loaded resources.
+			 * @param {number} page The page to load.
+			 * @param {number} pageSize The page size.
+			 * @return {Promise} The promise to be resolved once the request resolves and the view model is updated.
+			 */
+			CRUDResource.prototype.load = (query, page = 0, pageSize = this.options.pageSize) => {
+				this.vm.loading = true;
+				query = angular.extend({}, this.options.query, query);
+				this.vm.loadedAll = false;
+				return this.crudService.find(query, {page: page, pageSize: pageSize})
 				.then(response => {
-					this.vm[this.options.instanceName] = response;
+					// Processes union queries
+					if (query.union) {
+						var loadedResources = this.vm[this.options.resourceName];
+						this.vm[this.options.resourceName] = union(loadedResources, response.data);
+					} else {
+						this.vm[this.options.resourceName] = response.data;
+						this.vm.currentPage = 0;
+					}
+
+					// Updates the vm whenever all elements have loaded
+					var totalCount = response.headers("X-Total-Count");
+					if (totalCount && (page * pageSize + pageSize) >= totalCount) {
+						this.vm.loadedAll = true;
+					}
+
+					// Calls onLoad method, if any
 					this.options.onLoad && this.options.onLoad(response);
-					resolve(response);
-					return response;
-				}, err => {
+					return response.data;
+				},
+				err => {
 					this.vm.loadingError = true;
 					this.options.onLoadError && this.options.onLoadError(err);
 					return err;
@@ -131,8 +91,48 @@
 				.finally(() => {
 					this.vm.loading = false;
 				});
-			});
-		};
+			};
+
+			/**
+			 * Loads more items of a resource, increasing current page at view-model.
+			 * @param {Object} query The query to be sent to service.
+			 * @param {number} [pageSize] The size of the page to load.
+			 * @return {Promise} The promise to be resolved once the request is resolved and the view-model is updated.
+			 */
+			CRUDResource.prototype.loadMore = (query, pageSize = this.options.pageSize) => {
+				query = angular.extend({}, query, {union: true});
+				this.vm.currentPage = this.vm.currentPage || 0;
+				this.vm.currentPage++;
+				if (this.vm.loadedAll)
+					throw new Error("There are no more resources to load.");
+				return this.load(query, this.vm.currentPage, pageSize);
+			};
+
+			/**
+			 * Loads a single instance of a resource.
+			 * @param {string} id The id of the instance.
+			 * @return {Promise} Promise to be resolved once request is resolved and view-model is updated.
+			 */
+			CRUDResource.prototype.loadOne = id => {
+				this.vm.loading = true;
+				return $q((resolve, reject) => {
+					this.crudService.findOne(id)
+					.then(response => {
+						this.vm[this.options.instanceName] = response;
+						this.options.onLoad && this.options.onLoad(response.data);
+						resolve(response);
+						return response;
+					}, err => {
+						this.vm.loadingError = true;
+						this.options.onLoadError && this.options.onLoadError(err);
+						return err;
+					})
+					.finally(() => {
+						this.vm.loading = false;
+					});
+				});
+			};
+		}
 
 		return {
 			createInstance: createInstance
@@ -151,4 +151,21 @@
 			return new CRUDResource(crudService, vm, options);
 		}
 	});
+
+	/**
+	 * Small helper function to union two arrays.
+	 * @param {Array} array1 First array to merge.
+	 * @param {Array} array2 Second array to merge.
+	 * @return {Array} a Unioned array.
+	 */
+	function union(array1, array2) {
+		var a = array1.concat(array2);
+		for (var i = 0; i < a.length; ++i) {
+			for (var j = i + 1; j < a.length; ++j) {
+				if (a[i] === a[j])
+					a.splice(j--, 1);
+			}
+		}
+		return a;
+	}
 })();

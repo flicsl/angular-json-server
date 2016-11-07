@@ -4,10 +4,36 @@
  */
 (function() {
 	angular.module("angular-json-server")
-	.factory("CRUDServiceFactory", function(SERVER_URL,
-											CRUD_SERVICE,
-											$q,
-											$http) {
+	.constant("CRUD_SERVICE", {
+		FIND: {
+			DEFAULT_PAGE_SIZE: 10,
+			DEFAULT_PAGE: 0
+		}
+	})
+	.provider("CRUDServiceFactory", function() {
+		this.serverUrl = "";
+
+		this.setServerUrl = url => {
+			this.serverUrl = url;
+		};
+
+		this.$get = ["CRUD_SERVICE", "$q", "$http", (CRUD_SERVICE, $q, $http) => {
+			return new CRUDServiceFactory(this.serverUrl, CRUD_SERVICE, $q, $http);
+		}];
+	});
+
+	/**
+	 * Returns a new CRUDServiceFactory instance.
+	 * @param {String} SERVER_URL Server URL of the product factories.
+	 * @param {Object} CRUD_SERVICE Service configuration.
+	 * @param {Object} $q Angular $q object.
+	 * @param {Object} $http Angular $http object.
+	 * @return {CRUDServiceFactory} obj Resulting instance.
+	 */
+	function CRUDServiceFactory(SERVER_URL,
+								CRUD_SERVICE,
+								$q,
+								$http) {
 		/**
 		 * The constructor for a new CRUDService.
 		 * @param {string} resourcePath The path for the resource.
@@ -115,5 +141,5 @@
 				throw new Error("resourcePath missing on CRUDServiceFactory");
 			return new CRUDService(resourcePath);
 		}
-	});
+	}
 })();
