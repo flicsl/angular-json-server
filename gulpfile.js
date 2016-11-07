@@ -9,8 +9,10 @@ gulp.task("release", () => {
 				.pipe(babel({
 					presets: ["es2015"]
 				}))
-				.pipe(concat("app.min.js"))
+				.pipe(concat("angular-json-server.js"))
 				.pipe(ngAnnotate())
+				.pipe(gulp.dest("dist/"))
+				.pipe(concat("angular-json-server.min.js"))
 				.pipe(uglify())
 				.pipe(gulp.dest("dist/"));
 });
