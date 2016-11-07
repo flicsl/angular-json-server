@@ -10,23 +10,24 @@ describe("CRUDServiceFactory", function() {
 	var PLAYER_LIST;
 
 	beforeEach(module("angular-json-server", _CRUDServiceFactoryProvider_ => {
+		SERVER_URL = "http://serverurl.com/";
 		CRUDServiceFactoryProvider = _CRUDServiceFactoryProvider_;
-		CRUDServiceFactoryProvider.setServerUrl("http://localhost:8080/");
+		CRUDServiceFactoryProvider.setServerUrl(SERVER_URL);
 	}));
 
 	beforeEach(inject(function($injector) {
-		PLAYER_LIST = []; // FIXME
+		PLAYER_LIST = [{
+			id: 0,
+			name: "A"
+		}, {
+			id: 1,
+			name: "B"
+		}]; // FIXME
 		$httpBackend = $injector.get("$httpBackend");
 		CRUD_SERVICE = $injector.get("CRUD_SERVICE");
-		SERVER_URL = "http://serverurl.com/";
-		CRUDServiceFactory = CRUDServiceFactoryProvider.$get(CRUD_SERVICE, $injector.get("$q"), $injector.get("$http"));
+		CRUDServiceFactory = CRUDServiceFactoryProvider.$get[3](CRUD_SERVICE, $injector.get("$q"), $injector.get("$http"));
 		ServiceInstance = CRUDServiceFactory.createInstance("players");
 	}));
-
-	afterEach(function() {
-		$httpBackend.verifyNoOutstandingExpectation();
-		$httpBackend.verifyNoOutstandingRequest();
-	});
 
 	it("should be a valid service instance", function() {
 		ServiceInstance.should.be.an("object");
@@ -55,11 +56,12 @@ describe("CRUDServiceFactory", function() {
 										"&_start=" + START +
 										"&q=" + TEXT_SEARCH_KEY;
 
-				$httpBackend.when("GET", EXPECTED_GET_URL).respond({});
-
-				$httpBackend.expectGET(EXPECTED_GET_URL);
+				$httpBackend.expectGET(EXPECTED_GET_URL).respond({});
 				ServiceInstance.find({textSearch: TEXT_SEARCH_KEY})
-				.should.eventually.have.property("data").to.deep.equal({}).and.notify(done);
+				.then(response => {
+					response.should.have.property("data").to.deep.equal({});
+					done();
+				});
 				$httpBackend.flush();
 			});
 		});
@@ -103,8 +105,10 @@ describe("CRUDServiceFactory", function() {
 				.respond(PLAYER_LIST.slice(START, END));
 
 				$httpBackend.expectGET(EXPECTED_GET_URL);
-				ServiceInstance.find({}, opts).should.eventually
-				.have.property("data").to.deep.equal(PLAYER_LIST.slice(START, END)).and.notify(done);
+				ServiceInstance.find({}, opts).then(response => {
+					response.should.have.property("data").to.deep.equal(PLAYER_LIST.slice(START, END));
+					done();
+				});
 				$httpBackend.flush();
 			}
 		});
@@ -117,7 +121,10 @@ describe("CRUDServiceFactory", function() {
 
 			$httpBackend.expectPUT(EXPECTED_PUT_URL);
 			ServiceInstance.put(PLAYER_LIST[0])
-			.should.eventually.eql(PLAYER_LIST[0]).and.notify(done);
+			.then(response => {
+				response.should.eql(PLAYER_LIST[0]);
+				done();
+			});
 			$httpBackend.flush();
 		});
 
@@ -130,7 +137,10 @@ describe("CRUDServiceFactory", function() {
 
 			$httpBackend.expectPUT(EXPECTED_PUT_URL);
 			ServiceInstance.put(PLAYER_LIST[0])
-			.should.be.rejected.and.eventually.eql(SERVER_REJECTION).and.notify(done);
+			.catch(err => {
+				err.should.eql(SERVER_REJECTION);
+				done();
+			});
 			$httpBackend.flush();
 		});
 	});
@@ -144,7 +154,10 @@ describe("CRUDServiceFactory", function() {
 
 			$httpBackend.expectDELETE(EXPECTED_DELETE_URL);
 			ServiceInstance.destroy(PLAYER_ID)
-			.should.eventually.eql(SERVER_RESPONSE).and.notify(done);
+			.then(response => {
+				response.should.eql(SERVER_RESPONSE);
+				done();
+			});
 			$httpBackend.flush();
 		});
 
@@ -160,7 +173,10 @@ describe("CRUDServiceFactory", function() {
 
 			$httpBackend.expectDELETE(EXPECTED_DELETE_URL);
 			ServiceInstance.destroy(PLAYER_ID)
-			.should.be.rejected.and.eventually.eql(SERVER_REJECTION).and.notify(done);
+			.catch(err => {
+				err.should.eql(SERVER_REJECTION);
+				done();
+			});
 			$httpBackend.flush();
 		});
 	});

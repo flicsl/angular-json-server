@@ -17,7 +17,6 @@ module.exports = function(config) {
 		frameworks: [
 			"mocha",
 			"chai-things",
-			// "chai-as-promised",
 			"sinon-stub-promise",
 			"sinon-chai",
 			"chai"
