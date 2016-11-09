@@ -236,11 +236,11 @@
 			}, options);
 
 			// Build params object
-			var params = {
+			var params = angular.extend({}, query, {
 				q: query.textSearch,
 				_start: options.page * options.pageSize,
 				_limit: options.pageSize
-			};
+			});
 
 			// Query server and respond
 			return $q(function (resolve, reject) {
