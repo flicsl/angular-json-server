@@ -1,0 +1,22 @@
+{
+  "name": "angular-json-server",
+  "description": "Easily create Angular 1.x components for your json-server powered backend.",
+  "main": "index.js",
+  "authors": [
+    "Feliciano Santana <fsfelicianosantana@gmail.com>"
+  ],
+  "license": "MIT",
+  "keywords": [
+    "json-server",
+    "angular"
+  ],
+  "homepage": "",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}
