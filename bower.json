@@ -1,7 +1,7 @@
 {
   "name": "angular-json-server",
   "description": "Easily create Angular 1.x components for your json-server powered backend.",
-  "main": "index.js",
+  "main": "dist/angular-json-server.js",
   "authors": [
     "Feliciano Santana <fsfelicianosantana@gmail.com>"
   ],
